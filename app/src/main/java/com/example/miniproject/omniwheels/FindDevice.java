@@ -4,7 +4,8 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
-import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -12,7 +13,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
+
 import android.view.Gravity;
 import android.view.View;
 import android.widget.AdapterView;
@@ -20,10 +21,10 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Set;
-
-import static android.bluetooth.BluetoothAdapter.STATE_CONNECTED;
+import java.util.UUID;
 
 public class FindDevice extends AppCompatActivity {
 
@@ -32,7 +33,7 @@ public class FindDevice extends AppCompatActivity {
     private final int REQUEST_ENABLE_BT = 100;
     private ArrayAdapter<String> mArrayAdapter;
 
-    // Create a BroadcastReceiver for ACTION_FOUND
+    // Create a BroadcastReceiver for ACTION_FOUND (bt device found so add to list)
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
@@ -46,6 +47,7 @@ public class FindDevice extends AppCompatActivity {
         }
     };
 
+    // Used to check if enabling Bluetooth was successful
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -102,53 +104,76 @@ public class FindDevice extends AppCompatActivity {
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
 
-        //Connect as client
-        //BluetoothSocket socket = this.microbit.createRfcommSocketToServiceRecord(
+        //Connect to device
+        BluetoothGatt gatt = microbit.connectGatt(this, false, gattCallback);
 
-        microbit.connectGatt(this, false, new BluetoothGattCallback() {
-            @Override
-            public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+        //Instantiate private class
+        //ConnectThread ct = new ConnectThread(microbit, mBluetoothAdapter);
 
-                Toast t = Toast.makeText(getApplicationContext(), "CONNECTION STATE CHANGE", Toast.LENGTH_SHORT);
-                t.setGravity(Gravity.BOTTOM | Gravity.CENTER_VERTICAL, 0, 0);
-                t.show();
+    }  //end onCreate
 
-                if (newState == BluetoothProfile.STATE_CONNECTED) {
+    private  final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
+        @Override
+        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
 
-                    t = Toast.makeText(getApplicationContext(), "CONNECTED", Toast.LENGTH_SHORT);
-                    t.setGravity(Gravity.BOTTOM | Gravity.CENTER_VERTICAL, 0, 0);
-                    t.show();
+            Toast t = Toast.makeText(getApplicationContext(),
+                    "Connection state changed", Toast.LENGTH_SHORT);
+            t.setGravity(Gravity.BOTTOM | Gravity.CENTER_VERTICAL, 0, 0);
+            t.show();
+        }
+    };
 
-                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+    /**
+     * Connecting as a client - Inner Class
+     */
+    private class ConnectThread extends Thread {
+        private final BluetoothSocket mmSocket;
+        private final BluetoothDevice mmDevice;
+        private final BluetoothAdapter mBluetoothAdapter;
 
-                    t = Toast.makeText(getApplicationContext(), "DISCONNECTED", Toast.LENGTH_SHORT);
-                    t.setGravity(Gravity.BOTTOM | Gravity.CENTER_VERTICAL, 0, 0);
-                    t.show();
-                }
+        public ConnectThread(BluetoothDevice device, BluetoothAdapter bluetoothAdapter) {
+            // Use a temporary object that is later assigned to mmSocket,
+            // because mmSocket is final
+            BluetoothSocket tmp = null;
+            this.mmDevice = device;
+            this.mBluetoothAdapter = bluetoothAdapter;
+
+            // Get a BluetoothSocket to connect with the given BluetoothDevice
+            try {
+                // MY_UUID is the app's UUID string, also used by the server code
+                tmp = device.createRfcommSocketToServiceRecord(
+                        (UUID.fromString("what do I put here?")));
+            } catch (IOException e) { }
+            mmSocket = tmp;
+        }
+
+        public void run() {
+            // Cancel discovery because it will slow down the connection
+            mBluetoothAdapter.cancelDiscovery();
+
+            try {
+                // Connect the device through the socket. This will block
+                // until it succeeds or throws an exception
+                mmSocket.connect();
+            } catch (IOException connectException) {
+                // Unable to connect; close the socket and get out
+                try {
+                    mmSocket.close();
+                } catch (IOException closeException) { }
+                return;
             }
 
-            @Override
-            public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-                super.onServicesDiscovered(gatt, status);
-            }
-        });
+            // Do work to manage the connection (in a separate thread)
+            //manageConnectedSocket(mmSocket);
+        }
 
 
-
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-
-
-
-
-
-
-
-
-
+        /** Will cancel an in-progress connection, and close the socket */
+        public void cancel() {
+            try {
+                mmSocket.close();
+            } catch (IOException e) { }
+        }
     }
 }
 
