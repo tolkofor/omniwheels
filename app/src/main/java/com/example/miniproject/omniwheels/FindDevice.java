@@ -117,7 +117,7 @@ public class FindDevice extends AppCompatActivity {
         }
 
         boolean begin = gatt.beginReliableWrite();
-        Log.d(LOG_TAG, "Begin write is: " + begin);
+        Log.d(LOG_TAG, "Begin write is: " + begin); //return true
 
         BluetoothGattCharacteristic characteristic =
                 new BluetoothGattCharacteristic(service, 0b1111100000111110000011111, //LED matrix
@@ -125,11 +125,18 @@ public class FindDevice extends AppCompatActivity {
 
         sleep(1000);
         boolean write = gatt.writeCharacteristic(characteristic);
-        Log.d(LOG_TAG, "Do write is: " + write);
+        Log.d(LOG_TAG, "Do write is: " + write); //return false
 
         sleep(1000);
-        boolean execute =  gatt.executeReliableWrite();
+        boolean execute =  gatt.executeReliableWrite(); //return true
         Log.d(LOG_TAG, "Execute write is: " + execute);
+
+        /*
+         Added some sleeps which now makes begin write and execute return true but there is
+         something wrong with the characteristic as writeCharacteristic returns false.
+         I guess it is the permission param? What do I use?
+         */
+
 
     }  //end onCreate
 
