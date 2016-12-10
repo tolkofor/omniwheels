@@ -13,12 +13,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
 import android.util.Log;
-import android.view.Gravity;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Set;
@@ -108,6 +106,7 @@ public class FindDevice extends AppCompatActivity {
 
         //Connect to device
         BluetoothGatt gatt = microbit.connectGatt(this, false, gattCallback);
+        sleep(1000);
 
         String uuid = "E95D7B77-251D-470A-A062-FA1922DFA9A8";
         UUID service = null;
@@ -124,9 +123,11 @@ public class FindDevice extends AppCompatActivity {
                 new BluetoothGattCharacteristic(service, 0b1111100000111110000011111, //LED matrix
                         BluetoothGattCharacteristic.PERMISSION_WRITE);
 
+        sleep(1000);
         boolean write = gatt.writeCharacteristic(characteristic);
         Log.d(LOG_TAG, "Do write is: " + write);
 
+        sleep(1000);
         boolean execute =  gatt.executeReliableWrite();
         Log.d(LOG_TAG, "Execute write is: " + execute);
 
