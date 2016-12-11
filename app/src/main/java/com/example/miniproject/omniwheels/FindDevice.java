@@ -28,12 +28,20 @@ public class FindDevice extends AppCompatActivity {
 
     private final String LOG_TAG = FindDevice.class.getSimpleName();
 
+    public static String LEDSERVICE_SERVICE_UUID = "E95DD91D-251D-470A-A062-FA1922DFA9A8";
+    public static String LEDMATRIXSTATE_CHARACTERISTIC_UUID = "E95D7B77-251D-470A-A062-FA1922DFA9A8";
+    public static String LEDTEXT_CHARACTERISTIC_UUID = "E95D93EE-251D-470A-A062-FA1922DFA9A8";
+    public static String SCROLLINGDELAY_CHARACTERISTIC_UUID = "E95D0D2D-251D-470A-A062-FA1922DFA9A8";
+
     private Set<BluetoothDevice> pairedDevices;
     private BluetoothDevice microbit;
     private final int REQUEST_ENABLE_BT = 100;
     private ArrayAdapter<String> mArrayAdapter;
 
-    // Create a BroadcastReceiver for ACTION_FOUND (bt device found so add to list)
+    /**
+     * Create a BroadcastReceiver for ACTION_FOUND ( bt device found so add to list )
+     */
+
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
@@ -47,16 +55,20 @@ public class FindDevice extends AppCompatActivity {
         }
     };
 
-    // Used to check if enabling Bluetooth was successful
+    /**
+     * Used to check if enabling Bluetooth was successful
+     */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if( resultCode == REQUEST_ENABLE_BT) {
             //BT turned on successfully
         }
-
     }
 
+    /**
+     * Setup array adapter and listview, query devices and populate list
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -76,7 +88,7 @@ public class FindDevice extends AppCompatActivity {
 
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-                String deviceInfo = mArrayAdapter.getItem(position);
+                Log.v(LOG_TAG, "Item clicked: " + mArrayAdapter.getItem(position));
             }
         });
         mArrayAdapter.add("Test list item");
@@ -99,48 +111,43 @@ public class FindDevice extends AppCompatActivity {
                 this.microbit = device; //should only be one paired device
             }
         }
+    }
 
-        // Device Discovery - Register the BroadcastReceiver
-        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Thread t = new Thread(){
+            @Override
+            public void run() {
+                doBluetoothStuff();
+            }
+        };
+        t.start();
+    }
 
-        //Connect to device
-        BluetoothGatt gatt = microbit.connectGatt(this, false, gattCallback);
-        sleep(1000);
+    @Override
+    protected void onPostResume() {
+        super.onPostResume();
+    }
 
-        String uuid = "E95D7B77-251D-470A-A062-FA1922DFA9A8";
-        UUID service = null;
-        try {
-            service = UUID.fromString(uuid);
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        }
+    /**
+     * Unregister broadcast receiver
+     */
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(mReceiver);
+    }
 
-        boolean begin = gatt.beginReliableWrite();
-        Log.d(LOG_TAG, "Begin write is: " + begin); //return true
+    @Override
+    protected void onStop() {
+        super.onStop();
+    }
 
-        BluetoothGattCharacteristic characteristic =
-                new BluetoothGattCharacteristic(service, 0b1111100000111110000011111, //LED matrix
-                        BluetoothGattCharacteristic.PERMISSION_WRITE);
-
-        sleep(1000);
-        boolean write = gatt.writeCharacteristic(characteristic);
-        Log.d(LOG_TAG, "Do write is: " + write); //return false
-
-        sleep(1000);
-        boolean execute =  gatt.executeReliableWrite(); //return true
-        Log.d(LOG_TAG, "Execute write is: " + execute);
-
-        /*
-         Added some sleeps which now makes begin write and execute return true but there is
-         something wrong with the characteristic as writeCharacteristic returns false.
-         I guess it is the permission param? What do I use?
-         */
-
-
-    }  //end onCreate
-
-
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
 
     private  final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
         @Override
@@ -153,6 +160,69 @@ public class FindDevice extends AppCompatActivity {
             Log.d(LOG_TAG, "onCharacteristicWrite is: " + status);
         }
     };
+
+    private void doBluetoothStuff() {
+
+        Log.d(LOG_TAG, "Call doBluetoothStuff");
+
+        // Device Discovery - Register the BroadcastReceiver
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
+
+        //Connect to device
+        BluetoothGatt gatt = microbit.connectGatt(this, false, gattCallback);
+        sleep(1000);
+
+        UUID service = null;
+        UUID subService = null;
+        try {
+            service = UUID.fromString(LEDSERVICE_SERVICE_UUID);
+            subService = UUID.fromString(LEDTEXT_CHARACTERISTIC_UUID);
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        }
+
+        boolean begin = gatt.beginReliableWrite();
+        Log.d(LOG_TAG, "Begin write is: " + begin); //return true
+
+        /**
+         * Correct fields for constructing the BluetoothGattCharacteristics?
+         */
+
+        BluetoothGattCharacteristic characteristic1 =
+                new BluetoothGattCharacteristic(service, 0,
+                        BluetoothGattCharacteristic.PERMISSION_WRITE);
+        characteristic1.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+
+        BluetoothGattCharacteristic characteristic2 =
+                new BluetoothGattCharacteristic(subService, 0xFF,
+                        BluetoothGattCharacteristic.PERMISSION_WRITE);
+        characteristic2.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+
+        sleep(1000);
+        boolean write = gatt.writeCharacteristic(characteristic1);
+        Log.d(LOG_TAG, "Do write is: " + write); //return false
+
+        sleep(1000);
+        boolean write2 = gatt.writeCharacteristic(characteristic2);
+        Log.d(LOG_TAG, "Do write 2 is: " + write2); //return false
+
+        sleep(1000);
+        boolean execute =  gatt.executeReliableWrite(); //return true
+        Log.d(LOG_TAG, "Execute write is: " + execute);
+
+        /*
+         Added some sleeps which now makes begin write and execute return true but there is
+         something wrong with the characteristic as writeCharacteristic returns false.
+         I guess it is the permission param? What do I use?
+         */
+    }
+
+
+
+
+
+
 }
 
 
