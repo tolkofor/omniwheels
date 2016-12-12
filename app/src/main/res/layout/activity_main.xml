@@ -41,7 +41,7 @@
         android:id="@+id/up"
 
         app:layout_marginLeftPercent="37%"
-        app:layout_marginTopPercent="25%"
+        app:layout_marginTopPercent="20%"
         android:layout_width="70dp"
         android:layout_height="70dp"
 
@@ -52,7 +52,7 @@
         android:id="@+id/down"
 
         app:layout_marginLeftPercent="37%"
-        app:layout_marginTopPercent="75%"
+        app:layout_marginTopPercent="70%"
         android:layout_width="70dp"
         android:layout_height="70dp"
 
@@ -62,7 +62,7 @@
     <Button
         android:id="@+id/left"
 
-        app:layout_marginTopPercent="50%"
+        app:layout_marginTopPercent="45%"
         app:layout_marginLeftPercent="0%"
         android:layout_width="70dp"
         android:layout_height="70dp"
@@ -73,7 +73,7 @@
     <Button
         android:id="@+id/right"
 
-        app:layout_marginTopPercent="50%"
+        app:layout_marginTopPercent="45%"
         app:layout_marginLeftPercent="75%"
         android:layout_width="70dp"
         android:layout_height="70dp"
@@ -84,7 +84,7 @@
     <Button
         android:id="@+id/topLeft"
 
-        app:layout_marginTopPercent="25%"
+        app:layout_marginTopPercent="20%"
         app:layout_marginLeftPercent="0%"
         android:layout_width="70dp"
         android:layout_height="70dp"
@@ -95,7 +95,7 @@
     <Button
         android:id="@+id/topRight"
 
-        app:layout_marginTopPercent="25%"
+        app:layout_marginTopPercent="20%"
         app:layout_marginLeftPercent="75%"
         android:layout_width="70dp"
         android:layout_height="70dp"
@@ -106,7 +106,7 @@
     <Button
         android:id="@+id/bottomLeft"
 
-        app:layout_marginTopPercent="75%"
+        app:layout_marginTopPercent="70%"
         app:layout_marginLeftPercent="0%"
         android:layout_width="70dp"
         android:layout_height="70dp"
@@ -117,13 +117,44 @@
     <Button
         android:id="@+id/bottomRight"
 
-        app:layout_marginTopPercent="75%"
+        app:layout_marginTopPercent="70%"
         app:layout_marginLeftPercent="75%"
         android:layout_width="70dp"
         android:layout_height="70dp"
 
         android:rotation="135"
         android:background="@drawable/direction"/>
+
+    <Button
+        android:id="@+id/stop"
+
+        app:layout_marginTopPercent="45%"
+        app:layout_marginLeftPercent="37%"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+
+        android:rotation="0"
+        android:background="@drawable/stop"/>
+
+    <Button
+        android:id="@+id/spinLeft"
+
+        app:layout_marginTopPercent="90%"
+        app:layout_marginLeftPercent="10%"
+        android:layout_width="70dp"
+        android:layout_height="50dp"
+
+        android:background="@drawable/spin"/>
+
+    <Button
+        android:id="@+id/spinRight"
+
+        app:layout_marginTopPercent="90%"
+        app:layout_marginLeftPercent="65%"
+        android:layout_width="70dp"
+        android:layout_height="50dp"
+
+        android:background="@drawable/spin"/>
 
 </android.support.percent.PercentRelativeLayout>
 
