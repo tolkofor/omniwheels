@@ -21,6 +21,7 @@ import android.widget.ListView;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -174,9 +175,9 @@ public class FindDevice extends AppCompatActivity {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 BluetoothGattService bluetoothGattService = gatt.getService(serviceUUID);
                 if (bluetoothGattService != null) {
-                    Log.i(LOG_TAG, "Service characteristic UUID found: " + bluetoothGattService.getUuid().toString());
+                    Log.i(LOG_TAG, "Service UUID found: " + bluetoothGattService.getUuid().toString());
                 } else {
-                    Log.i(LOG_TAG, "Service characteristic not found for UUID: " + serviceUUID);
+                    Log.i(LOG_TAG, "Service not found for UUID: " + serviceUUID);
                 }
             }
         }
@@ -193,7 +194,7 @@ public class FindDevice extends AppCompatActivity {
         // Make UUIDs
         UUID characteristicUUID = null;
         try {
-            this.serviceUUID = UUID.fromString(DEVICE_INFO_SERVICE);
+            this.serviceUUID = UUID.fromString(UARTSERVICE_SERVICE_UUID);
             characteristicUUID = UUID.fromString(UART_RX_CHARACTERISTIC_UUID);
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
@@ -216,10 +217,28 @@ public class FindDevice extends AppCompatActivity {
         gatt.discoverServices();
 
         // Use Services
-        BluetoothGattService gattService = gatt.getService(serviceUUID);
+        BluetoothGattService gattService = new BluetoothGattService(
+        serviceUUID, BluetoothGattService.SERVICE_TYPE_PRIMARY);
+        Log.d(LOG_TAG, "Gatt Service is: " + gattService);
 
-        //BluetoothGattCharacteristic characteristic = gattService.getCharacteristic(characteristicUUID);
+        UUID u = gattService.getUuid();
+        Log.d(LOG_TAG, "UUID of service is: " + u);
 
+        List<BluetoothGattCharacteristic> chars = gattService.getCharacteristics();
+        for (BluetoothGattCharacteristic c: chars) {
+            Log.d(LOG_TAG, "Gatt characteristic is: " + c);
+        }
+
+        List<BluetoothGattService> services = gattService.getIncludedServices();
+        for (BluetoothGattService service : services) {
+            Log.d(LOG_TAG, "Gatt service is: " + s);
+        }
+
+
+
+
+        //int property = characteristic.getProperties();
+        //Log.d(LOG_TAG, "Property is: " + property);
 
         //characteristic.getProperties();
         // characteristic.getPermissions();
