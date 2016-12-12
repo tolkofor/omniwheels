@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattService;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -18,6 +19,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
@@ -28,12 +30,18 @@ public class FindDevice extends AppCompatActivity {
 
     private final String LOG_TAG = FindDevice.class.getSimpleName();
 
+    public static String DEVICE_INFO_SERVICE = "00001800-0000-1000-8000-00805F9B34FB";
+
     public static String LEDSERVICE_SERVICE_UUID = "E95DD91D-251D-470A-A062-FA1922DFA9A8";
     public static String LEDMATRIXSTATE_CHARACTERISTIC_UUID = "E95D7B77-251D-470A-A062-FA1922DFA9A8";
     public static String LEDTEXT_CHARACTERISTIC_UUID = "E95D93EE-251D-470A-A062-FA1922DFA9A8";
     public static String SCROLLINGDELAY_CHARACTERISTIC_UUID = "E95D0D2D-251D-470A-A062-FA1922DFA9A8";
 
-    private Set<BluetoothDevice> pairedDevices;
+    public static String UARTSERVICE_SERVICE_UUID =    "6E400001-B5A3-F393-E0A9-E50E24DCCA9E";
+    public static String UART_RX_CHARACTERISTIC_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E";
+    public static String UART_TX_CHARACTERISTIC_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E";
+
+    private UUID serviceUUID;
     private BluetoothDevice microbit;
     private final int REQUEST_ENABLE_BT = 100;
     private ArrayAdapter<String> mArrayAdapter;
@@ -101,7 +109,7 @@ public class FindDevice extends AppCompatActivity {
         }
 
         //Query devices that may already be paired before needing to do Device Discovery
-        this.pairedDevices = mBluetoothAdapter.getBondedDevices();
+        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
         // If there are paired devices
         if (pairedDevices.size() > 0) {
             // Loop through paired devices
@@ -159,6 +167,19 @@ public class FindDevice extends AppCompatActivity {
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             Log.d(LOG_TAG, "onCharacteristicWrite is: " + status);
         }
+
+        @Override
+        // New services discovered
+        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                BluetoothGattService bluetoothGattService = gatt.getService(serviceUUID);
+                if (bluetoothGattService != null) {
+                    Log.i(LOG_TAG, "Service characteristic UUID found: " + bluetoothGattService.getUuid().toString());
+                } else {
+                    Log.i(LOG_TAG, "Service characteristic not found for UUID: " + serviceUUID);
+                }
+            }
+        }
     };
 
     private void doBluetoothStuff() {
@@ -169,53 +190,55 @@ public class FindDevice extends AppCompatActivity {
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
 
-        //Connect to device
-        BluetoothGatt gatt = microbit.connectGatt(this, false, gattCallback);
-        sleep(1000);
-
-        UUID service = null;
-        UUID subService = null;
+        // Make UUIDs
+        UUID characteristicUUID = null;
         try {
-            service = UUID.fromString(LEDSERVICE_SERVICE_UUID);
-            subService = UUID.fromString(LEDTEXT_CHARACTERISTIC_UUID);
+            this.serviceUUID = UUID.fromString(DEVICE_INFO_SERVICE);
+            characteristicUUID = UUID.fromString(UART_RX_CHARACTERISTIC_UUID);
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
         }
 
-        boolean begin = gatt.beginReliableWrite();
-        Log.d(LOG_TAG, "Begin write is: " + begin); //return true
+        // Make Value
+        String s = "alligator";
+        byte[] value = new byte[10];
+        try {
+            value = s.getBytes("US-ASCII");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
 
-        /**
-         * Correct fields for constructing the BluetoothGattCharacteristics?
-         */
-
-        BluetoothGattCharacteristic characteristic1 =
-                new BluetoothGattCharacteristic(service, 0,
-                        BluetoothGattCharacteristic.PERMISSION_WRITE);
-        characteristic1.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
-
-        BluetoothGattCharacteristic characteristic2 =
-                new BluetoothGattCharacteristic(subService, 0xFF,
-                        BluetoothGattCharacteristic.PERMISSION_WRITE);
-        characteristic2.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
-
+        // Connect to device
+        BluetoothGatt gatt = microbit.connectGatt(this, false, gattCallback);
         sleep(1000);
-        boolean write = gatt.writeCharacteristic(characteristic1);
-        Log.d(LOG_TAG, "Do write is: " + write); //return false
 
-        sleep(1000);
-        boolean write2 = gatt.writeCharacteristic(characteristic2);
-        Log.d(LOG_TAG, "Do write 2 is: " + write2); //return false
+        // Discover services before you can use them
+        gatt.discoverServices();
 
-        sleep(1000);
-        boolean execute =  gatt.executeReliableWrite(); //return true
-        Log.d(LOG_TAG, "Execute write is: " + execute);
+        // Use Services
+        BluetoothGattService gattService = gatt.getService(serviceUUID);
 
-        /*
-         Added some sleeps which now makes begin write and execute return true but there is
-         something wrong with the characteristic as writeCharacteristic returns false.
-         I guess it is the permission param? What do I use?
-         */
+        //BluetoothGattCharacteristic characteristic = gattService.getCharacteristic(characteristicUUID);
+
+
+        //characteristic.getProperties();
+        // characteristic.getPermissions();
+        //characteristic.setValue(value);
+
+        //boolean begin = gatt.beginReliableWrite();
+        //Log.d(LOG_TAG, "Begin write is: " + begin); //return true
+
+        // Write
+        //sleep(1000);
+        //boolean write = gatt.writeCharacteristic(characteristic);
+        //Log.d(LOG_TAG, "Do write is: " + write); //return false
+
+        //sleep(1000);
+        //boolean execute = gatt.executeReliableWrite(); //return true
+        //Log.d(LOG_TAG, "Execute write is: " + execute);
+
+
+
     }
 
 
