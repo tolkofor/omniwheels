@@ -172,16 +172,41 @@ public class FindDevice extends AppCompatActivity {
         @Override
         // New services discovered
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                BluetoothGattService bluetoothGattService = gatt.getService(serviceUUID);
-                if (bluetoothGattService != null) {
-                    Log.i(LOG_TAG, "Service UUID found: " + bluetoothGattService.getUuid().toString());
-                } else {
-                    Log.i(LOG_TAG, "Service not found for UUID: " + serviceUUID);
+
+
+                Log.d(LOG_TAG, "Display Gatt services *******************************************************************************************");
+
+                // List Services
+                List<BluetoothGattService> services = gatt.getServices();
+                for (BluetoothGattService s: services) {
+                    Log.d(LOG_TAG, "Gatt service is: " + s.getUuid());
+
+                    if (s.getUuid().equals(serviceUUID)){
+                        //service is UART
+                        Log.d(LOG_TAG, "Service above is UART\n");
+                    }
+
+                    //for each service list characteristics
+                    List<BluetoothGattCharacteristic> chars = s.getCharacteristics();
+                    for (BluetoothGattCharacteristic c: chars) {
+                        Log.d(LOG_TAG, "Gatt characteristic is: " + c.getUuid());
+                    }
+                    Log.d(LOG_TAG, "End of this service characteristics ***************************************************************************");
                 }
+                Log.d(LOG_TAG, "End of services ***********************************************************************************************");
             }
         }
+
+        @Override
+        public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+
+            Log.i(LOG_TAG, "Characteristic" + characteristic.getUuid() + " read");
+        }
     };
+
+
 
     private void doBluetoothStuff() {
 
@@ -215,56 +240,7 @@ public class FindDevice extends AppCompatActivity {
 
         // Discover services before you can use them
         gatt.discoverServices();
-
-        // Use Services
-        BluetoothGattService gattService = new BluetoothGattService(
-        serviceUUID, BluetoothGattService.SERVICE_TYPE_PRIMARY);
-        Log.d(LOG_TAG, "Gatt Service is: " + gattService);
-
-        UUID u = gattService.getUuid();
-        Log.d(LOG_TAG, "UUID of service is: " + u);
-
-        List<BluetoothGattCharacteristic> chars = gattService.getCharacteristics();
-        for (BluetoothGattCharacteristic c: chars) {
-            Log.d(LOG_TAG, "Gatt characteristic is: " + c);
-        }
-
-        List<BluetoothGattService> services = gattService.getIncludedServices();
-        for (BluetoothGattService service : services) {
-            Log.d(LOG_TAG, "Gatt service is: " + s);
-        }
-
-
-
-
-        //int property = characteristic.getProperties();
-        //Log.d(LOG_TAG, "Property is: " + property);
-
-        //characteristic.getProperties();
-        // characteristic.getPermissions();
-        //characteristic.setValue(value);
-
-        //boolean begin = gatt.beginReliableWrite();
-        //Log.d(LOG_TAG, "Begin write is: " + begin); //return true
-
-        // Write
-        //sleep(1000);
-        //boolean write = gatt.writeCharacteristic(characteristic);
-        //Log.d(LOG_TAG, "Do write is: " + write); //return false
-
-        //sleep(1000);
-        //boolean execute = gatt.executeReliableWrite(); //return true
-        //Log.d(LOG_TAG, "Execute write is: " + execute);
-
-
-
     }
-
-
-
-
-
-
 }
 
 
